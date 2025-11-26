@@ -21,58 +21,44 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
 }
 
 fn render(frame: &mut Frame) {
-    let root = frame.area();
+    let root = frame.area(); // whole terminal
 
-    // 1) First: horizontally center a 100-column wide content area
-    let horizontal = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Min(0),       // left padding
-            Constraint::Length(100),  // our 100-column content area
-            Constraint::Min(0),       // right padding
-        ])
-        .split(root);
-    let content = horizontal[1]; // 100-column wide area in the middle
-
-    // 2) Split that content vertically: header + body (24 rows)
+    // 1) Vertical split: header (fixed height) + body (rest)
     let vertical = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),   // header height (frame 1)
-            Constraint::Length(24),  // body area for frames 2 + 3
-            // If the terminal is taller, extra rows are left unused
+            Constraint::Length(3),  // header height
+            Constraint::Min(0),     // body gets the rest
         ])
-        .split(content);
+        .split(root);
 
-    let header_area = vertical[0]; // frame 1
-    let body_area   = vertical[1]; // area that will be split into frame 2 + 3
+    let header_area = vertical[0]; // full-width header
+    let body_area   = vertical[1]; // full-width body
 
-    // 3) Split body horizontally into main (80) and side (20)
+    // 2) Inside body: main + sidebar, dynamic by percentage
     let body_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Length(80),  // frame 2: main
-            Constraint::Length(20),  // frame 3: sidebar
+            Constraint::Percentage(70), // main takes 70% of width
+            Constraint::Percentage(30), // sidebar takes 30%
         ])
         .split(body_area);
 
-    let main_area = body_chunks[0]; // frame 2
-    let side_area = body_chunks[1]; // frame 3
+    let main_area = body_chunks[0];
+    let side_area = body_chunks[1];
 
-    // 4) Render something into each "frame"
-    let header = Block::default()
-        .title("Header (frame 1)")
-        .borders(Borders::ALL);
-
-    let main = Block::default()
-        .title("Main (frame 2: 80x24)")
-        .borders(Borders::ALL);
-
-    let side = Block::default()
-        .title("Sidebar (frame 3: 20x24)")
-        .borders(Borders::ALL);
-
-    frame.render_widget(header, header_area);
-    frame.render_widget(main,   main_area);
-    frame.render_widget(side,   side_area);
+    // 3) (Optional) Render blocks so you can see the regions
+    frame.render_widget(
+        Block::default().title("HEADER").borders(Borders::ALL),
+        header_area,
+    );
+    frame.render_widget(
+        Block::default().title("MAIN").borders(Borders::ALL),
+        main_area,
+    );
+    frame.render_widget(
+        Block::default().title("SIDE").borders(Borders::ALL),
+        side_area,
+    );
 }
+
