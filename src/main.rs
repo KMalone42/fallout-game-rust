@@ -21,7 +21,18 @@ fn run(mut terminal: DefaultTerminal) -> Result<()> {
 }
 
 fn render(frame: &mut Frame) {
+    // frame.area() is a struct that looks like
+    // ( x, y, width, height )
     let root = frame.area(); // whole terminal
+    let mut ui = root;
+
+    // logic for different terminal sizes (derives 4:3 aspect ratio)
+    // really an 80:24 is simplified to 10:3
+    if ui.height * 10/3 <= ui.width {
+        ui.width = ui.height * 10/3; // width shrinks to fit height
+    } else {
+        ui.height = ui.width * 3/10; // height shrinks to fit width
+    }
 
     // 1) Vertical split: header (fixed height) + body (rest)
     let vertical = Layout::default()
@@ -30,7 +41,7 @@ fn render(frame: &mut Frame) {
             Constraint::Length(3),  // header height
             Constraint::Min(0),     // body gets the rest
         ])
-        .split(root);
+        .split(ui);
 
     let header_area = vertical[0]; // full-width header
     let body_area   = vertical[1]; // full-width body
@@ -62,3 +73,19 @@ fn render(frame: &mut Frame) {
     );
 }
 
+
+let mut app = App {
+    title: "My Ratatui App".into(),
+    status: "Press q to quit".into(),
+    log_lines: vec![
+        "Booting…".into(),
+        "Loaded config".into(),
+        "Waiting for input…".into(),
+    ],
+    menu_items: vec![
+        "Item 1".into(),
+        "Item 2".into(),
+        "Item 3".into(),
+    ],
+    selected: 0,
+};
