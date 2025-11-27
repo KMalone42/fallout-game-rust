@@ -6,7 +6,12 @@ use ratatui::layout::Rect;
 use ratatui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph};
 
 fn main() -> Result<()> {
+    use std::io::stdout;
+    use crossterm::execute;
+    use crossterm::event::EnableMouseCapture;
+
     color_eyre::install()?;
+    execute!(stdout(), EnableMouseCapture)?; // track user mouse
     let terminal = ratatui::init();
     let result = run(terminal);
     ratatui::restore();
@@ -14,18 +19,53 @@ fn main() -> Result<()> {
 }
 
 fn run(mut terminal: DefaultTerminal) -> Result<()> {
-    let mut app = App::new(); // state
-    loop {
-        terminal.draw(render)?;
-        if matches!(event::read()?, Event::Key(_)) {
-            break Ok(());
-        }
+    use crossterm::event::{self, Event, KeyCode, MouseEventKind};
+    use ratatui::layout::Rect;
 
-        // here is where you’d mutate app (app.selected, app.main_lines, etc.)
+    let mut app = App::new();            // state (unused for now, fine)
+    let mut selected = 0usize;           // which sidebar item is highlighted
+    let mut side_area = Rect::default(); // will be filled by render()
+
+    loop {
+        // draw, telling render what is selected, and letting it update side_area
+        terminal.draw(|f| render(f, selected, &mut side_area))?;
+
+        match event::read()? {
+            Event::Key(key) => {
+                if let KeyCode::Char('q') = key.code {
+                    break Ok(());
+                }
+            }
+            Event::Mouse(me) => {
+                use crossterm::event::MouseEventKind;
+                match me.kind {
+                    MouseEventKind::Moved | MouseEventKind::Down(_) => {
+                        let x = me.column;
+                        let y = me.row;
+
+                        if x >= side_area.x
+                            && x < side_area.x + side_area.width
+                            && y >= side_area.y
+                            && y < side_area.y + side_area.height
+                        {
+                            let inner_top = side_area.y + 1;
+                            if y >= inner_top {
+                                let row_index = (y - inner_top) as usize;
+                                let max_index = 3usize.saturating_sub(1); // 3 items
+                                selected = row_index.min(max_index);
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
     }
 }
 
-fn render(frame: &mut Frame) {
+fn render(frame: &mut Frame, selected: usize, side_area_out: &mut Rect) {
+
     // frame.area() is a struct that looks like
     // ( x, y, width, height )
     let root = frame.area(); // whole terminal
@@ -62,6 +102,9 @@ fn render(frame: &mut Frame) {
 
     let main_area = body_chunks[0];
     let side_area = body_chunks[1];
+
+    // store sidebar rect so run() can use it
+    *side_area_out = side_area;
 
     // Render blocks and their contents
     draw_header(frame, header_area);

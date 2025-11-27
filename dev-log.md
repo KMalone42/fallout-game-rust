@@ -33,6 +33,12 @@ logic from the perl project can be ported over.
 
 state ──(render)──> widgets ──> drawn into areas
 
+2025-11-26 (20:21)
+-------------------------------------------------------------------------------
+
+Happy to say i've learnt a lot more about the project, was able to populate the
+frames that i wanted, soon we'll be modifying content on page, but right now
+i'm trying to accomplish highlighting list objects, placing it in side bar for now
 
 
 
