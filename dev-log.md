@@ -69,8 +69,37 @@ if let Event::Key(key) = event::read()? {
 ```
 
 
+2025-11-27 (10:35)
+-------------------------------------------------------------------------------
+
+had to learn what 'state' was again. 
+I'll be populating 
+main with a table,
+side with a list
+header with a paragraph
+
+adding 'focus' state for the different panes. won't really help with the final
+thing but i want to learn how to do it for TUI in general so...
+
+'state' gets added to state.rs 
+'keyboard & mouse handling' gets added to app.rs 
+
+(est. 25 min)
+
+
 
 Chapter 3. "Slope of Enlightenment"
+
+2025-11-27 (14:25)
+-------------------------------------------------------------------------------
+we now have some working keybinds, i understand how to assign this using match
+statements. Additionally i have gotten some better understanding of building using
+state. Borders now change color on focus + title has '[active]' added to them.
+
+(est. 40 min)
+
+
+
 Chapter 4. "Plateau of Sustainability"
 
 
