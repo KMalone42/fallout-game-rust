@@ -41,6 +41,40 @@ frames that i wanted, soon we'll be modifying content on page, but right now
 i'm trying to accomplish highlighting list objects, placing it in side bar for now
 
 
+2025-11-26 (23:12)
+-------------------------------------------------------------------------------
+
+`https://www.youtube.com/watch?v=M-BTpC_BEN0&t=3s`
+
+'Ratatui Tutorial Beginners Guide'
+I'm watching this right now, after working with chatgpt for about 15 minutes on 
+a mouse implementation that didn't really work i've accepted i need some sort of
+docs guidance here. I think this is more a cross term thing though that i'll need
+to learn about to get this working.
+
+I think that this is a semi useful youtube video, it appears to just be giving 
+a quick overview of library features
+
+
+// Setting up key reading / events, here is where you can define key binds.
+```rust
+if let Event::Key(key) = event::read()? {
+    match key.code {
+        event::KeyCode::Char(c) => {
+        if c == 'q' {
+            break Ok(());
+        }
+    }
+}
+```
+
+
 
 Chapter 3. "Slope of Enlightenment"
 Chapter 4. "Plateau of Sustainability"
+
+
+Time Log
+---
+
+2025-11-26 : "~8.16hrs"
