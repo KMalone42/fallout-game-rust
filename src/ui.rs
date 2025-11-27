@@ -5,7 +5,7 @@ use ratatui::widgets::{
     Table, Row, Cell,
 };
 use ratatui::Frame;
-use ratatui::style::{Color, Style};
+use ratatui::style::{Color, Modifier, Style};
 
 use crate::state::{App, Focus};
 
@@ -74,6 +74,13 @@ fn draw_main(frame: &mut Frame, area: Rect, app: &App) {
         _ => Block::default().title("Main").borders(Borders::ALL),
     };
 
+
+    let active_cell_style = Style::default()
+        .fg(Color::Yellow)
+        .add_modifier(Modifier::BOLD);
+
+    let default_cell_style = Style::default();
+
     // ---------------------------------------------------------------------
     // Header row
     // ---------------------------------------------------------------------
@@ -85,15 +92,30 @@ fn draw_main(frame: &mut Frame, area: Rect, app: &App) {
     ]).style(Style::default().add_modifier(Modifier::BOLD));
 
     // ---------------------------------------------------------------------
-    // 16 rows of sample data (you replace this however you want)
+    // build rows
     // ---------------------------------------------------------------------
-    let rows = (0..16).map(|i| {
-        Row::new(vec![
-            Cell::from(format!("r{i}c0")),
-            Cell::from(format!("row {i} wide text col1")),
-            Cell::from(format!("c2-{i}")),
-            Cell::from(format!("wide col3 text for row {i}")),
-        ])
+    let rows = (0..16).map(|row_idx| {
+        let c0 = Cell::from(format!("r{row_idx}c0")).style(default_cell_style);
+
+        let mut c1 = Cell::from(format!("row {row_idx} wide text col1"));
+        let mut c2 = Cell::from(format!("c2-{row_idx}"));
+        let mut c3 = Cell::from(format!("wide col3 text for row {row_idx}"));
+
+        // if MAIN is focused *and* this is the selected row,
+        // apply active style to the active column
+        if app.focus == Focus::Main && row_idx == app.selected {
+            match app.table_col {
+                1 => {
+                    c1 = c1.style(active_cell_style);
+                }
+                3 => {
+                    c3 = c3.style(active_cell_style);
+                }
+                _ => {}
+            }
+        }
+
+        Row::new(vec![c0, c1, c2, c3])
     });
 
     // ---------------------------------------------------------------------

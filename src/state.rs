@@ -13,6 +13,9 @@ pub struct App {
     pub side_items: Vec<String>,
     pub selected: usize,
     pub focus: Focus,
+
+    pub table_col: usize,
+    pub table_row: usize,
 }
 
 impl App {
@@ -27,6 +30,8 @@ impl App {
             ],
             selected: 0,
             focus: Focus::Side, // start with sidebar focused
+            table_col: 1,
+            table_row: 1,
             // :: explanation
             // here focus variable is being assigned from the enum Focus, the side item
         }
