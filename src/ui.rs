@@ -50,6 +50,10 @@ pub fn render(frame: &mut Frame, app: &App, side_area_out: &mut Rect) {
     draw_header(frame, header_area, &app.header_text);
     draw_main(frame, main_area, app);
     draw_side(frame, side_area, app);
+
+    if app.game_over {
+        draw_game_over(frame, root);
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -162,4 +166,48 @@ fn draw_side(frame: &mut Frame, area: Rect, app: &App) {
     state.select(Some(app.selected));
 
     frame.render_stateful_widget(list, area, &mut state);
+}
+
+fn draw_game_over (frame: &mut Frame, area: Rect) {
+    // make a centered rect ~40% width, 30% height of the screen
+    let popup_area = centered_rect(40, 30, area);
+
+    let block = Block::default()
+        .title(" Game Over ")
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::Red));
+
+    let text = Paragraph::new("You lose!\nPress q to quit.")
+        .alignment(Alignment::Center)
+        .block(block);
+
+    // Clear what's underneath so the box looks solid
+    frame.render_widget(Clear, popup_area);
+    frame.render_widget(text, popup_area);
+}
+
+
+// helper for draw_game_over()
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+    // vertical split
+    let v = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Percentage(percent_y),
+            Constraint::Percentage((100 - percent_y) / 2),
+        ])
+        .split(r);
+
+    // horizontal split in the middle chunk
+    let h = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Percentage(percent_x),
+            Constraint::Percentage((100 - percent_x) / 2),
+        ])
+        .split(v[1]);
+
+    h[1]
 }
