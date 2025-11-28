@@ -87,6 +87,11 @@ thing but i want to learn how to do it for TUI in general so...
 (est. 25 min)
 
 
+2025-11-27 (17:51)
+-------------------------------------------------------------------------------
+Back to Pit of Despair 
+mouse handling is a bit rough, we're going to have to make some functions to 
+handle focus.
 
 Chapter 3. "Slope of Enlightenment"
 
@@ -97,6 +102,13 @@ statements. Additionally i have gotten some better understanding of building usi
 state. Borders now change color on focus + title has '[active]' added to them.
 
 (est. 40 min)
+
+
+
+2025-11-27 (17:51)
+-------------------------------------------------------------------------------
+Back to Pit of Despair 
+
 
 
 
