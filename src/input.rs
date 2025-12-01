@@ -2,15 +2,15 @@
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers, MouseEvent, MouseEventKind};
 use ratatui::layout::Rect;
+use ratatui::Frame;
 
 use crate::state::{App, Focus};
-
 
 
 // Return 'true' if the app should quit, 'false' otherwise.
 //
 // i don't really know how much i agree with -> bool
-fn handle_key(key: KeyEvent, app: &mut App) -> bool {
+pub fn handle_key(key: KeyEvent, app: &mut App) -> bool {
     use KeyCode::*;
     let code = key.code;
     let mods = key.modifiers;
@@ -19,24 +19,13 @@ fn handle_key(key: KeyEvent, app: &mut App) -> bool {
         // quit
         (Char('q'), _) => { return true; } // signal quit
 
-        // dialog
-        (Char(c), m) if !m.contains(KeyModifiers::CONTROL) && !m.contains(KeyModifiers::ALT {
-            app.input.push(c);
-        }
-        (Backspace, _) => { app.input.pop(); }
+        (Char('?'), _) => { app.show_help = !app.show_help; }
 
-        (Enter, _) => {
-            if !app.input.trim().is_empty() {
-                app.items.push(app.input.trim().to_string());
-            }
-            app.items.clear();
-        }
-        
-
-        (Tab, _) | (Right, m) if m.contains(KeyModifiers::CONTROL) => { app.focus_next(); }
-        (BackTab, _) | (Left, m) if m.contains(KeyModifiers::CONTROL) => { app.focus_prev(); }
-
-
+        // focus change with Ctrl
+        (Tab, _) => { app.focus.focus_next_horizontal(); }
+        (BackTab, _) => { app.focus.focus_next_horizontal(); }
+        (Right, m) if m.contains(KeyModifiers::CONTROL) => { app.focus.focus_next_horizontal(); }
+        (Left, m) if m.contains(KeyModifiers::CONTROL) => { app.focus.focus_next_horizontal(); }
 
          // shift + direction = focus movement
         (Left,  m) if m.contains(KeyModifiers::SHIFT) => { app.focus.focus_next_horizontal(); }
@@ -60,10 +49,24 @@ fn handle_key(key: KeyEvent, app: &mut App) -> bool {
         (Char('k'), _) => navigate_up(app),
         (Char('l'), _) => navigate_right(app),
 
+        // dialog (needs to got at bottom)
+        (Char(c), m) if !m.contains(KeyModifiers::CONTROL) && !m.contains(KeyModifiers::ALT) => {
+            app.input.push(c);
+        }
+        (Backspace, _) => { app.input.pop(); }
+
+        (Enter, _) => {
+            if !app.input.trim().is_empty() {
+                app.items.push(app.input.trim().to_string());
+            }
+            app.input.clear();
+        }
+        
+
         _ => {}
     }
 
-    false;
+    false
 }
 
 

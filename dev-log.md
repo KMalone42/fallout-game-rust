@@ -111,6 +111,14 @@ Back to Pit of Despair
 
 
 
+2025-11-28 (15:36)
+-------------------------------------------------------------------------------
+
+As i'm trying to implement elements of the game i'm finding it hard to keep track
+of all the pointers between everything.
+
+
+
 
 Chapter 4. "Plateau of Sustainability"
 

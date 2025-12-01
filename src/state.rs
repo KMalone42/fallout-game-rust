@@ -31,23 +31,29 @@ impl Focus {
     }
 }
 
+pub struct Title {
+
+}
+
 pub struct Health {
-    pub fn new(start: i32) -> Self {
-        Self { current: start }
-    }
+    pub current: i32,
 }
 
 impl Health {
+    pub fn new(start: i32) -> Self {
+        Self { current: start }
+    }
+
     // On guess if incorrect() 
     pub fn apply_guess(&mut self, guess: &str, password: &str) -> bool {
         if guess == password {
             true
+        } else {
+            if self.current > 0 {
+                self.current -= 1;
+            }
+            false
         }
-    } else {
-        if self.current > 0 {
-            self.current -= 1;
-        }
-        false
     }
 
     pub fn is_out(&self) -> bool {
@@ -67,6 +73,11 @@ pub struct App {
 
     pub health: Health,
     pub game_over: bool,
+
+    pub input: String,
+    pub items: Vec<String>,
+
+    pub show_help: bool,
 }
 
 impl App {
@@ -85,8 +96,9 @@ impl App {
             table_row: 1,
             health: Health::new(4),
             game_over: false,
-            // :: explanation
-            // here focus variable is being assigned from the enum Focus, the side item
+            input: String::new(),
+            items: Vec::new(),
+            show_help: false,
         }
     }
 }

@@ -2,7 +2,7 @@ use ratatui::prelude::*;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::widgets::{
     Block, Borders, List, ListItem, ListState, Paragraph,
-    Table, Row, Cell,
+    Table, Row, Cell, Clear, Wrap,
 };
 use ratatui::Frame;
 use ratatui::style::{Color, Modifier, Style};
@@ -53,6 +53,11 @@ pub fn render(frame: &mut Frame, app: &App, side_area_out: &mut Rect) {
 
     if app.game_over {
         draw_game_over(frame, root);
+    }
+
+    if app.show_help {
+        let area = frame.size();
+        draw_help(frame, area);
     }
 }
 
@@ -179,6 +184,24 @@ fn draw_game_over (frame: &mut Frame, area: Rect) {
 
     let text = Paragraph::new("You lose!\nPress q to quit.")
         .alignment(Alignment::Center)
+        .block(block);
+
+    // Clear what's underneath so the box looks solid
+    frame.render_widget(Clear, popup_area);
+    frame.render_widget(text, popup_area);
+}
+
+pub fn draw_help (frame: &mut Frame, area: Rect) {
+    let popup_area = centered_rect(40, 30, area);
+
+    let block = Block::default()
+        .title(" Help ")
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::Red));
+
+    let text = Paragraph::new("To play the Fallout hacking minigame, you must guess the correct password from a list of words, all the same length, scattered among random characters. After each guess, the Likeness score will tell you how many letters in your word are also correct and in the right position. Use this score to eliminate other possibilities from the list. You can also find and click on matching bracket pairs, such as () or <>, to either remove a wrong dud password or reset your remaining attempts. You typically have four attempts to find the correct password. If you are down to your last try, you can exit and re-enter the terminal to reset the puzzle.")
+        .wrap(Wrap { trim: true})
+        .scroll((1, 0))
         .block(block);
 
     // Clear what's underneath so the box looks solid

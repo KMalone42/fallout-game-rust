@@ -1,17 +1,19 @@
 // src/app.rs
 
 use color_eyre::Result;
-use crossterm::event::{self, Event, KeyCode, KeyModifiers, KeyEvent, MouseEventKind};
+use crossterm::event::{ 
+    self, Event, KeyCode, KeyModifiers, KeyEvent, KeyEventKind, MouseEventKind,
+};
 use ratatui::DefaultTerminal;
 use ratatui::layout::Rect;
 
 use crate::state::{App, Focus};
 use crate::ui;
 
-use input
+use crate::input::{handle_key, handle_mouse };
 
 
-/// Main app loop.
+// Main app loop
 pub fn run(mut terminal: DefaultTerminal) -> Result<()> {
     let mut app = App::new();
     let mut side_area = Rect::default(); // updated by ui::render
@@ -21,13 +23,19 @@ pub fn run(mut terminal: DefaultTerminal) -> Result<()> {
         terminal.draw(|f| ui::render(f, &app, &mut side_area))?;
 
         match event::read()? {
-            Event::Key(key) => handle_key(key, &mut app),
-            Event::Mouse(me) => handle_mouse()
-        }
-
-        // Ignore key-release / repeat noise in some terminals
-        if key.kind != KeyEventKind::Press {
-            continue;
+            Event::Key(key) => {
+                // only on key press (skip repeats / releases)
+                if key.kind == KeyEventKind::Press {
+                    if handle_key(key, &mut app) {
+                        // handle_key returns true = quit
+                        return Ok(());
+                    }
+                }
+            }
+            Event::Mouse(me) => {
+                handle_mouse(me, &mut app, side_area);
+            }
+            _ => {}
         }
     }
 }

@@ -9,6 +9,7 @@ use std::io::stdout;
 mod app;
 mod state;
 mod ui;
+mod input;
 
 fn main() -> Result<()> {
     color_eyre::install()?;
