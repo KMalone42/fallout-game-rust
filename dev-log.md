@@ -118,6 +118,21 @@ As i'm trying to implement elements of the game i'm finding it hard to keep trac
 of all the pointers between everything.
 
 
+2025-12-01 (12:50)
+-------------------------------------------------------------------------------
+
+I added a help key, learnt a little bit more about how these projects should be structured.
+I went wrong trying to call draw_help() from my input.rs::handle_keys(). things should be 
+routed through the app struct in state.rs
+
+I want to consolidate app.rs and state.rs since App struct really doesn't seem like it should be 
+inside of the state.rs file
+
+things should be routed through App struct.
+
+(est. 50 min)
+
+
 
 
 Chapter 4. "Plateau of Sustainability"
