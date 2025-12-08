@@ -7,7 +7,7 @@ use ratatui::widgets::{
 use ratatui::Frame;
 use ratatui::style::{Color, Modifier, Style};
 
-use crate::state::{App, Focus};
+use crate::app::{App, Focus};
 
 pub fn render(frame: &mut Frame, app: &App, side_area_out: &mut Rect) {
     let root = frame.area();
@@ -59,6 +59,46 @@ pub fn render(frame: &mut Frame, app: &App, side_area_out: &mut Rect) {
         let area = frame.size();
         draw_help(frame, area);
     }
+
+
+
+
+    // Input area (unchanged)
+    let prompt = Span::styled(
+        "Add item: ",
+        Style::default().add_modifier(Modifier::BOLD),
+    );
+    let input_line = Line::from(vec![prompt, Span::raw(&app.input)]);
+    let input = Paragraph::new(input_line);
+    f.render_widget(input, chunks[1]);
+    // ------------------------------------------------------------------------
+    // Not placed correctly but i can figure that this area should be in this function
+    //
+    //
+    //
+
+    // boiler likely unneeded
+fn ui(f: &mut Frame, app: &App) {
+    let area = f.area();
+
+    let outer = Block::default().borders(Borders::ALL).title("Items");
+    f.render_widget(outer.clone(), area);
+
+    let inner = outer.inner(area);
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(
+            [
+                Constraint::Min(1),   // list
+                Constraint::Length(3) // input
+            ]
+            .as_ref(),
+        )
+        .split(inner);
+
+
+}
 }
 
 // ----------------------------------------------------------------------------
@@ -146,6 +186,37 @@ fn draw_main(frame: &mut Frame, area: Rect, app: &App) {
 
 
 fn draw_side(frame: &mut Frame, area: Rect, app: &App) {
+
+    // -------- BOTTOM-ALIGNED, ENDLESS LIST VIEW --------
+    let list_area = chunks[0];
+    let list_height = list_area.height as usize;
+
+    let total = app.items.len();
+
+    // Take only the last `list_height` items (tail)
+    let start = total.saturating_sub(list_height);
+    let tail = &app.items[start..];
+
+    let mut visible_items: Vec<ListItem> = Vec::new();
+
+    // Pad on top so the tail hugs the bottom
+    let padding = list_height.saturating_sub(tail.len());
+    for _ in 0..padding {
+        visible_items.push(ListItem::new(""));
+    }
+
+    for text in tail {
+        visible_items.push(ListItem::new(text.clone()));
+    }
+
+    let list = List::new(visible_items);
+    f.render_widget(list, list_area);
+    // -------------------------------------
+    // Not placed correctly
+
+
+
+
     let items: Vec<ListItem> = app
         .side_items
         .iter()

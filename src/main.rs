@@ -7,7 +7,6 @@ use ratatui::DefaultTerminal;
 use std::io::stdout;
 
 mod app;
-mod state;
 mod ui;
 mod input;
 
