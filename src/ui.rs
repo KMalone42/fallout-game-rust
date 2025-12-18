@@ -2,14 +2,14 @@ use ratatui::prelude::*;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::widgets::{
     Block, Borders, List, ListItem, ListState, Paragraph,
-    Table, Row, Cell, Clear, Wrap,
+    Table, Row, Cell, Clear, Wrap, TableState,
 };
 use ratatui::Frame;
 use ratatui::style::{Color, Modifier, Style};
 
-use crate::app::{App, Focus};
+use crate::app::{App, Focus, DebugLog};
 
-pub fn render(frame: &mut Frame, app: &App, side_area_out: &mut Rect) {
+pub fn render(frame: &mut Frame, app: &mut App) {
     let root = frame.area();
     let mut ui = root;
 
@@ -20,6 +20,8 @@ pub fn render(frame: &mut Frame, app: &App, side_area_out: &mut Rect) {
         ui.height = ui.width * 3 / 10; // height shrinks to fit width
     }
 
+    // Describe Layout
+    // ------------------------------------------------------------------------
     // Vertical: header + body
     let vertical = Layout::default()
         .direction(Direction::Vertical)
@@ -44,63 +46,44 @@ pub fn render(frame: &mut Frame, app: &App, side_area_out: &mut Rect) {
     let main_area = body_chunks[0];
     let side_area = body_chunks[1];
 
+    let side_area_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage(90),
+            Constraint::Percentage(10),
+        ])
+        .split(side_area);
+
+    let history_area = side_area_chunks[0];
+    let input_area   = side_area_chunks[1];
+
+    // End layout description
+    //-------------------------------------------------------------------------
+
     // expose sidebar rect to app loop for hit-testing
-    *side_area_out = side_area;
+    // *side_area_out = side_area;
 
-    draw_header(frame, header_area, &app.header_text);
+    draw_header(frame, header_area, "Headerlol");
     draw_main(frame, main_area, app);
-    draw_side(frame, side_area, app);
+    draw_side(frame, side_area, history_area, input_area, app);
 
+    // Popups
     if app.game_over {
         draw_game_over(frame, root);
     }
 
     if app.show_help {
-        let area = frame.size();
+        let area = frame.area();
         draw_help(frame, area);
     }
 
-
-
-
-    // Input area (unchanged)
-    let prompt = Span::styled(
-        "Add item: ",
-        Style::default().add_modifier(Modifier::BOLD),
-    );
-    let input_line = Line::from(vec![prompt, Span::raw(&app.input)]);
-    let input = Paragraph::new(input_line);
-    f.render_widget(input, chunks[1]);
-    // ------------------------------------------------------------------------
-    // Not placed correctly but i can figure that this area should be in this function
-    //
-    //
-    //
-
-    // boiler likely unneeded
-fn ui(f: &mut Frame, app: &App) {
-    let area = f.area();
-
-    let outer = Block::default().borders(Borders::ALL).title("Items");
-    f.render_widget(outer.clone(), area);
-
-    let inner = outer.inner(area);
-
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(
-            [
-                Constraint::Min(1),   // list
-                Constraint::Length(3) // input
-            ]
-            .as_ref(),
-        )
-        .split(inner);
-
+    if app.show_debug {
+        let area = frame.area();
+        draw_debug(frame, area, &app.debug);
+    }
 
 }
-}
-
+// End render 'ui runtime'
 // ----------------------------------------------------------------------------
 
 
@@ -114,15 +97,14 @@ fn draw_header(frame: &mut Frame, area: Rect, header_text: &str) {
 }
 
 
-fn draw_main(frame: &mut Frame, area: Rect, app: &App) {
+fn draw_main(frame: &mut Frame, area: Rect, app: &mut App) {
     let block = match app.focus {
-        Focus::Main => {
-            Block::default().title("Main [active]").borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Cyan))
-        }
+        Focus::Main => Block::default()
+            .title("Main [active]")
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::Cyan)),
         _ => Block::default().title("Main").borders(Borders::ALL),
     };
-
 
     let active_cell_style = Style::default()
         .fg(Color::Yellow)
@@ -130,119 +112,126 @@ fn draw_main(frame: &mut Frame, area: Rect, app: &App) {
 
     let default_cell_style = Style::default();
 
-    // ---------------------------------------------------------------------
-    // Header row
-    // ---------------------------------------------------------------------
-    let header = Row::new([
-        Cell::from("Col 0"),   // narrow
-        Cell::from("Col 1"),   // wide
-        Cell::from("Col 2"),   // narrow
-        Cell::from("Col 3"),   // wide
-    ]).style(Style::default().add_modifier(Modifier::BOLD));
+    let header_cells = (0..app.ts.columns)
+        .map(|i| Cell::from(format!("Col {i}")));
 
-    // ---------------------------------------------------------------------
-    // build rows
-    // ---------------------------------------------------------------------
-    let rows = (0..16).map(|row_idx| {
-        let c0 = Cell::from(format!("r{row_idx}c0")).style(default_cell_style);
+    let header = Row::new(header_cells)
+        .style(Style::default()
+        .add_modifier(Modifier::BOLD));
 
-        let mut c1 = Cell::from(format!("row {row_idx} wide text col1"));
-        let mut c2 = Cell::from(format!("c2-{row_idx}"));
-        let mut c3 = Cell::from(format!("wide col3 text for row {row_idx}"));
+    // -----------------------------
+    // Build rows from app.table_contents
+    // -----------------------------
+    let selected_row = app.state.selected().unwrap_or(usize::MAX);
 
-        // if MAIN is focused *and* this is the selected row,
-        // apply active style to the active column
-        if app.focus == Focus::Main && row_idx == app.selected {
-            match app.table_col {
-                1 => {
-                    c1 = c1.style(active_cell_style);
-                }
-                3 => {
-                    c3 = c3.style(active_cell_style);
-                }
-                _ => {}
+    let rows = app.table_contents.iter().enumerate().map(|(row_idx, row)| {
+        let active_col = app.col_state.min(row.len().saturating_sub(1));
+
+        let cells = row.iter().enumerate().map(|(col_idx, val)| {
+            let mut cell = Cell::from(val.as_str()).style(default_cell_style);
+
+            if app.focus == Focus::Main
+                && row_idx == selected_row
+                && col_idx == active_col
+            {
+                cell = cell.style(active_cell_style);
             }
-        }
 
-        Row::new(vec![c0, c1, c2, c3])
+            cell
+        });
+
+        Row::new(cells)
     });
+  
+    // -----------------------------
+    // Column widths (simple default)
+    // -----------------------------
 
-    // ---------------------------------------------------------------------
-    // Build table
-    // ---------------------------------------------------------------------
-    let widths = [
-        Constraint::Length(6),      // col 0 (narrow)
-        Constraint::Percentage(40), // col 1 (WIDE)
-        Constraint::Length(8),      // col 2 (narrow)
-        Constraint::Percentage(40), // col 3 (WIDE)
-    ];
+    // Ratatui needs a width per column. Since you don't store widths yet,
+    // just make them evenly split.
+    let widths: Vec<Constraint> = (0..app.ts.columns)
+        .map(|_| Constraint::Percentage((100 / app.ts.columns.max(1)) as u16))
+        .collect();
+
     let table = Table::new(rows, widths)
         .header(header)
         .block(block)
-        .column_spacing(1);
+        .column_spacing(app.ts.column_spacing);
 
-    frame.render_widget(table, area);
+    // If you're using TableState for selection, render as stateful:
+    frame.render_stateful_widget(table, area, &mut app.state);
 }
 
 
-fn draw_side(frame: &mut Frame, area: Rect, app: &App) {
+fn draw_side(frame: &mut Frame, side_area: Rect, history_area: Rect, input_area: Rect, app: &mut App) {
+    let inner = draw_side_border(frame, side_area, app);
+    draw_side_history(frame, intersect(history_area, inner), app);
+    draw_side_input(frame, intersect(input_area, inner), app);
+}
 
-    // -------- BOTTOM-ALIGNED, ENDLESS LIST VIEW --------
-    let list_area = chunks[0];
-    let list_height = list_area.height as usize;
-
-    let total = app.items.len();
-
-    // Take only the last `list_height` items (tail)
-    let start = total.saturating_sub(list_height);
-    let tail = &app.items[start..];
-
-    let mut visible_items: Vec<ListItem> = Vec::new();
-
-    // Pad on top so the tail hugs the bottom
-    let padding = list_height.saturating_sub(tail.len());
-    for _ in 0..padding {
-        visible_items.push(ListItem::new(""));
-    }
-
-    for text in tail {
-        visible_items.push(ListItem::new(text.clone()));
-    }
-
-    let list = List::new(visible_items);
-    f.render_widget(list, list_area);
-    // -------------------------------------
-    // Not placed correctly
-
-
-
-
-    let items: Vec<ListItem> = app
-        .side_items
-        .iter()
-        .map(|s| ListItem::new(s.as_str()))
-        .collect();
-
+// Handles focus rendering logic + border
+fn draw_side_border(frame: &mut Frame, area: Rect, app: &mut App) -> Rect {
     let block = match app.focus {
-        Focus::Side => {
-            Block::default().title("Side [active]").borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Cyan))
-        }
+        Focus::Side => Block::default()
+            .title("Side [active]")
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::Cyan)),
         _ => Block::default().title("Side").borders(Borders::ALL),
     };
 
-    let list = List::new(items)
-        .block(block)
-        .highlight_symbol("➤ ")
-        .highlight_style(
-            Style::default().add_modifier(Modifier::BOLD),
-        );
-
-    let mut state = ListState::default();
-    state.select(Some(app.selected));
-
-    frame.render_stateful_widget(list, area, &mut state);
+    let inner = block.inner(area); // return the inner area of the side_area
+    frame.render_widget(block, area);
+    inner
 }
+// List that scrolls up as you add items
+fn draw_side_history(frame: &mut Frame, area: Rect, app: &mut App) {
+    let list_height = area.height as usize;
+    let total = app.items.len();
+
+    let start = total.saturating_sub(list_height);
+    let tail = &app.items[start..];
+
+    let mut visible: Vec<ListItem> = Vec::new();
+
+    let padding = list_height.saturating_sub(tail.len());
+    visible.extend((0..padding).map(|_| ListItem::new("")));
+
+    visible.extend(tail.iter().map(|s| ListItem::new(s.clone())));
+
+    let list = List::new(visible);
+    frame.render_widget(list, area);
+}
+// Area where user inputs items
+fn draw_side_input(frame: &mut Frame, area: Rect, app: &mut App) {
+    let prompt = Span::styled(
+        "> ",
+        Style::default().add_modifier(Modifier::BOLD),
+    );
+
+    let input_line = Line::from(vec![prompt, Span::raw(&app.input)]);
+
+    let input = Paragraph::new(input_line);
+    frame.render_widget(input, area);
+}
+// Helper: prevents history and input from drawing over border
+fn intersect(a: Rect, b: Rect) -> Rect {
+    let x1 = a.x.max(b.x);
+    let y1 = a.y.max(b.y);
+    let x2 = (a.x + a.width).min(b.x + b.width);
+    let y2 = (a.y + a.height).min(b.y + b.height);
+
+    Rect {
+        x: x1,
+        y: y1,
+        width: x2.saturating_sub(x1),
+        height: y2.saturating_sub(y1),
+    }
+}
+
+
+// Popups
+// ----------------------------------------------------------------------------
+
 
 fn draw_game_over (frame: &mut Frame, area: Rect) {
     // make a centered rect ~40% width, 30% height of the screen
@@ -261,6 +250,7 @@ fn draw_game_over (frame: &mut Frame, area: Rect) {
     frame.render_widget(Clear, popup_area);
     frame.render_widget(text, popup_area);
 }
+
 
 pub fn draw_help (frame: &mut Frame, area: Rect) {
     let popup_area = centered_rect(40, 30, area);
@@ -281,6 +271,24 @@ pub fn draw_help (frame: &mut Frame, area: Rect) {
 }
 
 
+pub fn draw_debug (frame: &mut Frame, area: Rect, debug: &DebugLog) {
+    let popup_area = centered_rect(40, 90, area);
+
+    let block = Block::default()
+        .title(" Debug ")
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(Color::Red));
+
+    let items: Vec<ListItem> = debug
+        .iter()
+        .map(|line| ListItem::new(line.as_str()))
+        .collect();
+
+    let list = List::new(items).block(block);
+
+    frame.render_widget(Clear, popup_area);
+    frame.render_widget(list, popup_area);
+}
 // helper for draw_game_over()
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     // vertical split

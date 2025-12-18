@@ -1,4 +1,4 @@
-// assets/tables.rs
+// src/assets.rs
 // Data “tables” as functions and constants in Rust
 
 pub const POOL: &str = "!@#$%^&*()[]{}";
@@ -47,8 +47,19 @@ pub fn acceptable_combination(open: char) -> Option<char> {
     }
 }
 
-pub fn titles_str() -> &'static str { 
+pub fn titles_str(n: u8) -> &'static str { 
     match n {
-        0 => "Welcome to ROBCO Industries (TM) Termlink"   
+        1 => "ArcJet Systems | ArcNet",
+        0 => "Welcome to ROBCO Industries (TM) Termlink",
+        _ => "Welcome to ROBCO Industries (TM) Termlink",
     }
 }
+
+pub fn status_str(n: u8) -> &'static str {
+    match n {
+        1 => "Password Required",
+        0 => "!!! WARNING LOCKOUT IMMINENT !!!",
+        _ => "Password Required",
+    }
+}
+

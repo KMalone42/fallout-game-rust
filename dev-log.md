@@ -1,4 +1,4 @@
-Chapter 1. "Peak of Mount Stupid"
+# Chapter 1. "Peak of Mount Stupid"
 
 2025-11-26 (6hrs)
 -------------------------------------------------------------------------------
@@ -12,7 +12,7 @@ rows are much largers than columns in a terminal window.
 I am happy with the general layout, now i intend to populate the widgets
 
 
-Chapter 2. "Valley of Despair"
+# Chapter 2. "Valley of Despair"
 
 2025-11-26 (19:22)
 -------------------------------------------------------------------------------
@@ -93,7 +93,7 @@ Back to Pit of Despair
 mouse handling is a bit rough, we're going to have to make some functions to 
 handle focus.
 
-Chapter 3. "Slope of Enlightenment"
+# Chapter 3. "Slope of Enlightenment"
 
 2025-11-27 (14:25)
 -------------------------------------------------------------------------------
@@ -132,10 +132,18 @@ things should be routed through App struct.
 
 (est. 50 min)
 
+2025-12-11 (14:08)
+-------------------------------------------------------------------------------
+
+restructured app.rs to have some better structs, added structs for basically all
+the sections of the UI, Health, Title, and Status are apart of the header. 
+currently working on adding navigation to Table Struct
+(est. 150 min)
 
 
 
-Chapter 4. "Plateau of Sustainability"
+
+# Chapter 4. "Plateau of Sustainability"
 
 
 Time Log
