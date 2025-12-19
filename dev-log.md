@@ -145,6 +145,27 @@ currently working on adding navigation to Table Struct
 
 # Chapter 4. "Plateau of Sustainability"
 
+2025-12-18 (23:19)
+-------------------------------------------------------------------------------
+
+I feel confident enough to say now that adding features to this project is pretty simple.
+Today I finished implementing the debugger and got it working with table navigation & focus navigation.
+
+Focus navigation function was fixed by having actually mod the app.focus object. This was done by changing parameter to 
+&mut self instead of just self. 
+
+Up next is implementing random characters, first i will need to construct 
+lines on a basis of character length rather than object.
+
+what this means i think is another refactor to the draw_main function which 
+which won't just take the app.table_contents object and draw it. 
+
+I need a smart way to add random characters to the table. I think what I should
+do is say after generating the words -> take the remaining letters then randomly
+generate strings of x length between 0 and remaining characters. problem with 
+this is that it will result in many large random strings in the front, not evenly distributed. 
+
+What I could do is evenly divide then maybe implement a random variance algorithm. it just always needs to result in the ends number of characters being equal to x (around 160)
 
 Time Log
 ---
