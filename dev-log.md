@@ -1,4 +1,4 @@
-Chapter 1. "Peak of Mount Stupid"
+# Chapter 1. "Peak of Mount Stupid"
 
 2025-11-26 (6hrs)
 -------------------------------------------------------------------------------
@@ -12,7 +12,7 @@ rows are much largers than columns in a terminal window.
 I am happy with the general layout, now i intend to populate the widgets
 
 
-Chapter 2. "Valley of Despair"
+# Chapter 2. "Valley of Despair"
 
 2025-11-26 (19:22)
 -------------------------------------------------------------------------------
@@ -69,10 +69,103 @@ if let Event::Key(key) = event::read()? {
 ```
 
 
+2025-11-27 (10:35)
+-------------------------------------------------------------------------------
 
-Chapter 3. "Slope of Enlightenment"
-Chapter 4. "Plateau of Sustainability"
+had to learn what 'state' was again. 
+I'll be populating 
+main with a table,
+side with a list
+header with a paragraph
 
+adding 'focus' state for the different panes. won't really help with the final
+thing but i want to learn how to do it for TUI in general so...
+
+'state' gets added to state.rs 
+'keyboard & mouse handling' gets added to app.rs 
+
+(est. 25 min)
+
+
+2025-11-27 (17:51)
+-------------------------------------------------------------------------------
+Back to Pit of Despair 
+mouse handling is a bit rough, we're going to have to make some functions to 
+handle focus.
+
+# Chapter 3. "Slope of Enlightenment"
+
+2025-11-27 (14:25)
+-------------------------------------------------------------------------------
+we now have some working keybinds, i understand how to assign this using match
+statements. Additionally i have gotten some better understanding of building using
+state. Borders now change color on focus + title has '[active]' added to them.
+
+(est. 40 min)
+
+
+
+2025-11-27 (17:51)
+-------------------------------------------------------------------------------
+Back to Pit of Despair 
+
+
+
+2025-11-28 (15:36)
+-------------------------------------------------------------------------------
+
+As i'm trying to implement elements of the game i'm finding it hard to keep track
+of all the pointers between everything.
+
+
+2025-12-01 (12:50)
+-------------------------------------------------------------------------------
+
+I added a help key, learnt a little bit more about how these projects should be structured.
+I went wrong trying to call draw_help() from my input.rs::handle_keys(). things should be 
+routed through the app struct in state.rs
+
+I want to consolidate app.rs and state.rs since App struct really doesn't seem like it should be 
+inside of the state.rs file
+
+things should be routed through App struct.
+
+(est. 50 min)
+
+2025-12-11 (14:08)
+-------------------------------------------------------------------------------
+
+restructured app.rs to have some better structs, added structs for basically all
+the sections of the UI, Health, Title, and Status are apart of the header. 
+currently working on adding navigation to Table Struct
+(est. 150 min)
+
+
+
+
+# Chapter 4. "Plateau of Sustainability"
+
+2025-12-18 (23:19)
+-------------------------------------------------------------------------------
+
+I feel confident enough to say now that adding features to this project is pretty simple.
+Today I finished implementing the debugger and got it working with table navigation & focus navigation.
+
+Focus navigation function was fixed by having actually mod the app.focus object. This was done by changing parameter to 
+&mut self instead of just self. 
+
+Up next is implementing random characters, first i will need to construct 
+lines on a basis of character length rather than object.
+
+what this means i think is another refactor to the draw_main function which 
+which won't just take the app.table_contents object and draw it. 
+
+I need a smart way to add random characters to the table. I think what I should
+do is say after generating the words -> take the remaining letters then randomly
+generate strings of x length between 0 and remaining characters. problem with 
+this is that it will result in many large random strings in the front, not evenly distributed. 
+
+What I could do is evenly divide then maybe implement a random variance algorithm. it just always needs to result in the ends number of characters being equal to x (around 160)
 
 Time Log
 ---
