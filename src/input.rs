@@ -25,10 +25,22 @@ pub fn handle_key(key: KeyEvent, app: &mut App) -> bool {
         (Tab, _) => { app.focus.focus_next_horizontal(); }
         (BackTab, _) => { app.focus.focus_next_horizontal(); }
 
-        (Left,  _) => { app.focus.focus_next_horizontal(); }
-        (Right, _) => { app.focus.focus_next_horizontal(); }
-        (Up,    _) => { app.focus.focus_next_vertical(); }
-        (Down,  _) => { app.focus.focus_next_vertical(); }
+        (Left,  _) => {
+            app.focus.focus_next_horizontal(); 
+            app.debug.push(format!("focus_left focused={:?}", app.focus));
+        }
+        (Right, _) => {
+            app.focus.focus_next_horizontal(); 
+            app.debug.push(format!("focus_right focused={:?}", app.focus));
+        }
+        (Up,    _) => {
+            app.focus.focus_next_vertical(); 
+            app.debug.push(format!("focus_up focused={:?}", app.focus));
+        }
+        (Down,  _) => {
+            app.focus.focus_next_vertical(); 
+            app.debug.push(format!("focus_down focused={:?}", app.focus));
+        }
 
         //Char('h') if Focus::Main => { app.main.navigate_left();  }
         //Char('l') if Focus::Main => { app.main.navigate_right(); }
@@ -48,6 +60,25 @@ pub fn handle_key(key: KeyEvent, app: &mut App) -> bool {
             app.table_right(); 
             app.debug.push(format!("table_right row={:?} col={}", app.state.selected(), app.col_state));
         }
+
+        //(Enter, _ ) => { 
+            //match app.focus { 
+                //Focus::Side => { 
+                    //if !app.input.trim().is_empty() { 
+                        //app.items.push(app.input.trim().to_string()); 
+                    //}
+                //}
+                //Focus::Main => { 
+                    //// need to get the currently hovered cell
+                    //// & represents borrowing
+                    //let word = &app.table_contents[app.col_state][app.state.selected()];
+                    //app.table_contents
+                    //app.state.selected(), app.col_state
+                    //app.input.push(word);
+                //} 
+                //_ => {}
+            //}
+        //}
 
 
         //// dialog (needs to got at bottom)

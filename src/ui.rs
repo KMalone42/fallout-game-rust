@@ -26,7 +26,7 @@ pub fn render(frame: &mut Frame, app: &mut App) {
     let vertical = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),  // header
+            Constraint::Length(6),  // header 4 inner 2 border
             Constraint::Min(0),     // body
         ])
         .split(ui);
@@ -63,7 +63,7 @@ pub fn render(frame: &mut Frame, app: &mut App) {
     // expose sidebar rect to app loop for hit-testing
     // *side_area_out = side_area;
 
-    draw_header(frame, header_area, "Headerlol");
+    draw_header(frame, header_area, app);
     draw_main(frame, main_area, app);
     draw_side(frame, side_area, history_area, input_area, app);
 
@@ -87,11 +87,24 @@ pub fn render(frame: &mut Frame, app: &mut App) {
 // ----------------------------------------------------------------------------
 
 
-fn draw_header(frame: &mut Frame, area: Rect, header_text: &str) {
-    let block = Block::default().title("HEADER").borders(Borders::ALL);
+fn draw_header(frame: &mut Frame, area: Rect, app: &mut App) {
+    // App is being passed in for health, title and whatever
+    let block = match app.focus {
+        Focus::Head => Block::default()
+            .title("Header [active]")
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::Cyan)),
+        _ => Block::default().title("Header").borders(Borders::ALL),
+    };
 
-    let content = Paragraph::new(header_text.to_string())
-        .block(block);
+    let text = Text::from(vec![
+        Line::from(app.header.title.clone()),
+        Line::from(app.header.status.clone()),
+        Line::default(), // blank line
+        Line::from(app.header.new_health_bar()),
+    ]);
+
+    let content = Paragraph::new(text).block(block);
 
     frame.render_widget(content, area);
 }

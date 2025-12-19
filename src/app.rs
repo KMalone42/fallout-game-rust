@@ -53,21 +53,21 @@ pub enum Focus {
     Help,
 }
 impl Focus {
-    pub fn focus_next_vertical(self) -> Self {
-        match self {
+    pub fn focus_next_vertical(&mut self) {
+        *self = match *self {
             Focus::Head => Focus::Main,               // going "down" from header
             Focus::Main | Focus::Side => Focus::Head, // from either body panel -> header
             Focus::Help => Focus::Help,
-        }
+        };
     }
 
-    pub fn focus_next_horizontal(self) -> Self {
-        match self {
+    pub fn focus_next_horizontal(&mut self) {
+        *self = match *self {
             Focus::Head => Focus::Head,
             Focus::Main => Focus::Side,
             Focus::Side => Focus::Main,
             Focus::Help => Focus::Help,
-        }
+        };
     }
 }
 
