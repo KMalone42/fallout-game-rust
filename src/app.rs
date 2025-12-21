@@ -313,4 +313,11 @@ impl App {
         if self.col_state < max_cols { self.col_state += 1; }
         else { self.col_state = 0; } // wrapping_add(n)
     }
+
+    pub fn word_at_coordinates(&self, x: Option<usize>, y: usize) -> Option<String> {
+        let x = x?; // unwraps Option<usize> into usize
+        self.table_contents.get(y)
+         .and_then(|row| row.get(x))
+         .cloned()
+    }
 }
