@@ -224,6 +224,7 @@ impl DebugLog {
     pub fn iter(&self) -> impl Iterator<Item = &String> {
         self.lines.iter()
     }
+    pub fn len(&self) -> usize { self.lines.len() }
 }
 
 

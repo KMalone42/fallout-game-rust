@@ -66,6 +66,7 @@ pub fn handle_key(key: KeyEvent, app: &mut App) -> bool {
                 Focus::Side => { 
                     if !app.input.trim().is_empty() { 
                         app.items.push(app.input.trim().to_string()); 
+                        app.input.clear();
                     }
                 }
                 Focus::Main => { 

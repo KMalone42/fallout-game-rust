@@ -287,17 +287,31 @@ pub fn draw_help (frame: &mut Frame, area: Rect) {
 pub fn draw_debug (frame: &mut Frame, area: Rect, debug: &DebugLog) {
     let popup_area = centered_rect(40, 90, area);
 
+    // Important for scrolling and starting at the bottom
+    let list_height = popup_area.height.saturating_sub(2) as usize;
+    let total = debug.len();
+    let start = total.saturating_sub(list_height);
+
+
+    // There's work todo to implement that 'tail' feature since this is a VecDeque
+    let tail_iter = debug.iter().skip(start);
+    let tail_len = total - start;
+    let padding = list_height.saturating_sub(tail_len);
+
+    // 'visible' name given to the actual list that is rendered not DebugLog list
+    let mut visible: Vec<ListItem> = Vec::with_capacity(list_height);
+    visible.extend((0..padding).map(|_| ListItem::new(""))); // add padding
+    // render content
+    visible.extend(
+        tail_iter.map(|line| ListItem::new(line.as_str()))
+    );
+
     let block = Block::default()
         .title(" Debug ")
         .borders(Borders::ALL)
         .border_style(Style::default().fg(Color::Red));
 
-    let items: Vec<ListItem> = debug
-        .iter()
-        .map(|line| ListItem::new(line.as_str()))
-        .collect();
-
-    let list = List::new(items).block(block);
+    let list = List::new(visible).block(block);
 
     frame.render_widget(Clear, popup_area);
     frame.render_widget(list, popup_area);
