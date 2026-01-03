@@ -131,28 +131,47 @@ impl TableStructure {
 pub struct TableModel {
     pub hex_list: Vec<String>,
     pub word_list: Vec<String>,
+    pub junk_word_list: Vec<String>,
+    pub play_space: Vec<String>,
     pub password: String,
     pub state: TableState,
 }
 impl TableModel {
     /// High-level constructor: this is what you call from `App::new()`.
-    pub fn new(n: usize) -> Self {
+    pub fn new() -> Self {
         let hex_list = Self::build_hex_list();
-        let word_list = Self::new_word_list(n);
+        let word_list = Self::new_word_list(8);
         let password = Self::new_password(&word_list);
+        let junk_word_list = Self::generate_junk(&word_list);
+        let play_space = Self::build_play_space(&junk_word_list);
         Self { 
             hex_list,
             word_list,
             password, 
+            junk_word_list,
+            play_space,
             state: TableState::new(),
         }
     }
+
+    pub fn build_hex_list() -> Vec<String> {
+        let start: u32 = fastrand::u32(..);
+        let count: usize = 32;
+        (start..start.saturating_add(count as u32))
+            .map(|n| format!("{:x}", n)) // lower-case hex; use {:X} for upper-case
+            .collect()
+    }
+
+    /* Chain for generating a word list, takes tokens from assets/tokens.txt 
+    *  generates word_list -> gets password from list
+    */
     fn load_words() -> Vec<String> {
         let contents = std::fs::read_to_string("assets/tokens.txt")
             .expect("failed to read tokens.txt");
 
         contents.lines().map(|s| s.to_string()).collect()
     }
+    // n = number of words in play area
     pub fn new_word_list(n: usize) -> Vec<String> {
         let mut tokens = Self::load_words();
         fastrand::shuffle(&mut tokens);
@@ -166,36 +185,99 @@ impl TableModel {
         return password;
     }
 
-    pub fn build_hex_list() -> Vec<String> {
-        let start: u32 = fastrand::u32(..);
-        let count: usize = 32;
-        (start..start.saturating_add(count as u32))
-            .map(|n| format!("{:x}", n)) // lower-case hex; use {:X} for upper-case
+    /* balls n bins implementation generates junk around each word and returns a 
+    *  Vec<String> that looks like (junk, word, junk, word...
+    */
+    pub fn generate_junk(word_list: &[String]) -> Vec<String> {
+        let total_chars: usize = word_list.iter().map(|s| s.chars().count()).sum();
+        let total_junk: usize = 256usize.saturating_sub(total_chars);
+
+        let (mut content, empty_indices): (Vec<String>, Vec<usize>) = word_list
+            .into_iter()
+            .flat_map(|w| [String::new(), w.clone()])  // build "", w, "", w, ...
+            .enumerate()                               // attach final index: (idx, item)
+            .fold((Vec::new(), Vec::new()), |(mut out, mut idxs), (i, s)| {
+                if s.is_empty() {                      // the inserted ""
+                    idxs.push(i);
+                }
+                out.push(s);
+                (out, idxs)
+            });
+
+        assert!(!empty_indices.is_empty(), "nowhere to put junk (no bins)");
+        if total_junk == 0 { return content; }
+
+        let fr_max_1: usize = empty_indices.len();
+        let junkpool: Vec<char> =
+            "!@#$%^&*(){}[]<>+-_=|\\/:;'\"`,.?~".chars().collect();
+        let fr_max_2: usize = junkpool.len();
+
+        // get a random index empty_indices[i] to place a random char junkpool[j] into
+        // content[empty_indices[i]]
+        for _ in 0..total_junk { 
+            let i = fastrand::usize(..fr_max_1);
+            let j = fastrand::usize(..fr_max_2);
+
+            let junk_char = junkpool[j];
+
+            content[empty_indices[i]].push(junk_char);
+        };
+        return content
+    }
+
+    /* helper function turns output of generate_junk to a string then back into a
+    *  vec where each cell is an equal number of characters.
+    */
+    pub fn build_play_space(junk_word_list: &[String]) -> Vec<String> {
+        let cell_len = 8;
+        let total_cells = 32;
+
+        // Flatten into Vec<char> so we can chunk by *characters* safely
+        let chars: Vec<char> = junk_word_list.iter().flat_map(|s| s.chars()).collect();
+
+        assert_eq!(chars.len(), cell_len * total_cells, "expected 256 chars total");
+
+        // Chunk into 8-char cells
+        chars
+            .chunks(cell_len)
+            .take(total_cells)
+            .map(|chunk| chunk.iter().collect::<String>())
             .collect()
     }
+
+    /* builds a Vec<Vec<String>> that looks likes this
+    *  hex play[0] hex play[2]
+    *  hex play[1] hex play[3]...
+    */
     pub fn build_alternating_lists(
         columns: usize,
         rows: usize,
         hex_list: &[String],
-        word_list: &[String],
+        play_space: &[String],
     ) -> Vec<Vec<String>> {
-        assert!(columns % 2 == 0, "columns must be even");
+        assert!(columns == 4,           "there should be 4 columns");
+        assert!(rows == 16,             "there should be 16 rows for play_space");
+        assert!(play_space.len() == 32, "junk+word_list should be split into 32 cells");
+        assert!(hex_list.len() == 32,   "hex_list should have 32 elements");
 
-        let mut idx1 = 0usize;
-        let mut idx2 = 0usize;
+        let mut hex_idx = 0usize; // global iterator for hex_list
+
 
         let mut result: Vec<Vec<String>> = Vec::with_capacity(rows);
 
-        for _ in 0..rows {
+        for i in 0..rows {
             let mut inner: Vec<String> = Vec::with_capacity(columns);
 
-            for i in 0..columns {
-                if i % 2 == 0 {
-                    inner.push(hex_list[idx1].clone());
-                    idx1 += 1;
+            for j in 0..columns {
+                if j % 2 == 0 {
+                    inner.push(hex_list[hex_idx].clone());
+                    hex_idx += 1;
                 } else {
-                    inner.push(word_list[idx2].clone());
-                    idx2 += 1;
+                    // compute play_idx if % 2 return value for first column else second column
+                    // col 1 & 3 should be getting values from play_space
+                    let odd_k = j / 2;
+                    let idx = i + odd_k * 16;
+                    inner.push(play_space[idx].clone());
                 }
             }
 
@@ -224,6 +306,7 @@ impl DebugLog {
     pub fn iter(&self) -> impl Iterator<Item = &String> {
         self.lines.iter()
     }
+    pub fn len(&self) -> usize { self.lines.len() }
 }
 
 
@@ -250,9 +333,9 @@ pub struct App {
 
 impl App {
     pub fn new() -> Self {
-        let main = TableModel::new(32);
+        let main = TableModel::new();
         let ts = TableStructure::new();
-        let table_contents = TableModel::build_alternating_lists(ts.columns, ts.rows, &main.hex_list, &main.word_list);
+        let table_contents = TableModel::build_alternating_lists(ts.columns, ts.rows, &main.hex_list, &main.play_space);
         let state = TableState::default().with_selected(Some(0));
         let header = Header::new(4);
         Self {
@@ -312,5 +395,13 @@ impl App {
 
         if self.col_state < max_cols { self.col_state += 1; }
         else { self.col_state = 0; } // wrapping_add(n)
+    }
+
+    pub fn word_at_coordinates(&mut self, x: usize, y: Option<usize>) -> Option<String> {
+        let y = y?; // unwraps Option<usize> into usize
+        self.debug.push(format!("word_at_coordinates row={y} col={x}"));
+        self.table_contents.get(y)
+         .and_then(|row| row.get(x))
+         .cloned()
     }
 }

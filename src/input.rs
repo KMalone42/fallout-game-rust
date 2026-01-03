@@ -61,24 +61,26 @@ pub fn handle_key(key: KeyEvent, app: &mut App) -> bool {
             app.debug.push(format!("table_right row={:?} col={}", app.state.selected(), app.col_state));
         }
 
-        //(Enter, _ ) => { 
-            //match app.focus { 
-                //Focus::Side => { 
-                    //if !app.input.trim().is_empty() { 
-                        //app.items.push(app.input.trim().to_string()); 
-                    //}
-                //}
-                //Focus::Main => { 
-                    //// need to get the currently hovered cell
-                    //// & represents borrowing
-                    //let word = &app.table_contents[app.col_state][app.state.selected()];
-                    //app.table_contents
-                    //app.state.selected(), app.col_state
-                    //app.input.push(word);
-                //} 
-                //_ => {}
-            //}
-        //}
+        (Enter, _ ) => { 
+            match app.focus { 
+                Focus::Side => { 
+                    if !app.input.trim().is_empty() { 
+                        app.items.push(app.input.trim().to_string()); 
+                        app.input.clear();
+                    }
+                }
+                Focus::Main => { 
+                    // need to get the currently hovered cell
+                    let word = app.word_at_coordinates(app.col_state, app.state.selected());
+
+                    if let Some(word) = word {
+                        app.input.clear();
+                        app.input.push_str(word.as_str()); // or app.input.push_str(&word);
+                    }
+                } 
+                _ => {}
+            }
+        }
 
 
         //// dialog (needs to got at bottom)
