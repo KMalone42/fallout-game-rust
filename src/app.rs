@@ -228,7 +228,7 @@ impl TableModel {
     /* helper function turns output of generate_junk to a string then back into a
     *  vec where each cell is an equal number of characters.
     */
-    pub fn build_play_space(junk_word_list: &[String]) -> Vec<String> {
+    pub fn build_play_space(junk_word_list: &[String]) -> Vec<char>, Vec<String> {
         let cell_len = 8;
         let total_cells = 32;
 
@@ -238,11 +238,21 @@ impl TableModel {
         assert_eq!(chars.len(), cell_len * total_cells, "expected 256 chars total");
 
         // Chunk into 8-char cells
-        chars
+        let chunked_chars = chars
             .chunks(cell_len)
             .take(total_cells)
             .map(|chunk| chunk.iter().collect::<String>())
-            .collect()
+            .collect();
+
+        return chars, chunked_chars;
+    }
+
+    /* returns a list of valid playable strings in the existing play space
+    */
+    pub fn eval_play_space() -> Vec<String> {
+        let valid: Vec<String>;
+
+        return valid;
     }
 
     /* builds a Vec<Vec<String>> that looks likes this
