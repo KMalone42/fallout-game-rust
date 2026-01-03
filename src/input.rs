@@ -71,9 +71,10 @@ pub fn handle_key(key: KeyEvent, app: &mut App) -> bool {
                 }
                 Focus::Main => { 
                     // need to get the currently hovered cell
-                    let word = app.word_at_coordinates(app.state.selected(), app.col_state);
+                    let word = app.word_at_coordinates(app.col_state, app.state.selected());
 
                     if let Some(word) = word {
+                        app.input.clear();
                         app.input.push_str(word.as_str()); // or app.input.push_str(&word);
                     }
                 } 
