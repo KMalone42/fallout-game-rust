@@ -131,8 +131,8 @@ impl TableStructure {
 pub struct TableModel {
     pub hex_list: Vec<String>,
     pub word_list: Vec<String>,
-    pub junk_word_list: Vec<String>,
-    pub play_space: Vec<String>,
+    pub junk_words: (Vec<String>, Vec<usize>),
+    pub play_space: (Vec<char>, Vec<String>),
     pub password: String,
     pub state: TableState,
 }
@@ -142,13 +142,13 @@ impl TableModel {
         let hex_list = Self::build_hex_list();
         let word_list = Self::new_word_list(8);
         let password = Self::new_password(&word_list);
-        let junk_word_list = Self::generate_junk(&word_list);
-        let play_space = Self::build_play_space(&junk_word_list);
+        let junk_words = Self::generate_junk(&word_list);
+        let play_space = Self::build_play_space(&junk_words.0);
         Self { 
             hex_list,
             word_list,
             password, 
-            junk_word_list,
+            junk_words,
             play_space,
             state: TableState::new(),
         }
@@ -188,7 +188,7 @@ impl TableModel {
     /* balls n bins implementation generates junk around each word and returns a 
     *  Vec<String> that looks like (junk, word, junk, word...
     */
-    pub fn generate_junk(word_list: &[String]) -> Vec<String> {
+    pub fn generate_junk(word_list: &[String]) -> (Vec<String>, Vec<usize>) {
         let total_chars: usize = word_list.iter().map(|s| s.chars().count()).sum();
         let total_junk: usize = 256usize.saturating_sub(total_chars);
 
@@ -205,7 +205,7 @@ impl TableModel {
             });
 
         assert!(!empty_indices.is_empty(), "nowhere to put junk (no bins)");
-        if total_junk == 0 { return content; }
+        if total_junk == 0 { return (content, empty_indices); }
 
         let fr_max_1: usize = empty_indices.len();
         let junkpool: Vec<char> =
@@ -222,13 +222,13 @@ impl TableModel {
 
             content[empty_indices[i]].push(junk_char);
         };
-        return content
+        return (content, empty_indices);
     }
 
     /* helper function turns output of generate_junk to a string then back into a
     *  vec where each cell is an equal number of characters.
     */
-    pub fn build_play_space(junk_word_list: &[String]) -> Vec<char>, Vec<String> {
+    pub fn build_play_space(junk_word_list: &[String]) -> (Vec<char>, Vec<String>) {
         let cell_len = 8;
         let total_cells = 32;
 
@@ -244,16 +244,50 @@ impl TableModel {
             .map(|chunk| chunk.iter().collect::<String>())
             .collect();
 
-        return chars, chunked_chars;
+        return (chars, chunked_chars);
     }
 
+
+    /* returns substring between FIRST open and LAST close (exclusive)
+    *  helper function for eval_play_space 
+    */ 
+    pub fn capture_between(s: &str, open: char, close: char) -> Option<String> {
+        let start = s.find(open)?;     // byte index of first open
+        let end   = s.rfind(close)?;   // byte index of last close
+        if end <= start { return None; }
+
+        // we want *inside* the delimiters
+        let inside = &s[start + open.len_utf8() .. end];
+        Some(inside.to_string())
+    }
     /* returns a list of valid playable strings in the existing play space
+    *  take the output of generate junk and evaluate all the symbol strings
     */
-    pub fn eval_play_space() -> Vec<String> {
-        let valid: Vec<String>;
+    pub fn eval_play_space(mut junk_indices: Vec<usize>, content: Vec<String>) -> Vec<String> {
+        // junk_indices from generate_junk.empty_indices is used as a map to tell us where junk was likely 
+        // placed within content before processing these things however we 
+        // need to find out if any of these were left empty
+        junk_indices.retain(|&i| !content[i].is_empty());
 
-        return valid;
+        // captures of text *between* first opener and last closer
+        let mut captures: Vec<String> = Vec::new();
+
+        for &idx in &junk_indices {
+            let junk: &str = content[idx].as_str();
+
+            // () [] {} <> "" ''
+            if let Some(s) = Self::capture_between(junk, '(', ')') { captures.push(s); }
+            if let Some(s) = Self::capture_between(junk, '[', ']') { captures.push(s); }
+            if let Some(s) = Self::capture_between(junk, '{', '}') { captures.push(s); }
+            if let Some(s) = Self::capture_between(junk, '<', '>') { captures.push(s); }
+            if let Some(s) = Self::capture_between(junk, '"', '"') { captures.push(s); }
+            if let Some(s) = Self::capture_between(junk, '\'', '\'') { captures.push(s); }
+        }
+
+        // take captures and words from content
+        content
     }
+
 
     /* builds a Vec<Vec<String>> that looks likes this
     *  hex play[0] hex play[2]
@@ -345,7 +379,7 @@ impl App {
     pub fn new() -> Self {
         let main = TableModel::new();
         let ts = TableStructure::new();
-        let table_contents = TableModel::build_alternating_lists(ts.columns, ts.rows, &main.hex_list, &main.play_space);
+        let table_contents = TableModel::build_alternating_lists(ts.columns, ts.rows, &main.hex_list, &main.play_space.1);
         let state = TableState::default().with_selected(Some(0));
         let header = Header::new(4);
         Self {
