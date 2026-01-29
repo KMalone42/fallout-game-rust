@@ -112,20 +112,6 @@ impl Header {
     }
 }
 
-pub struct PlaySpace {
-    pub chars: Vec<char>,
-    pub char_cells: Vec<String>,
-}
-
-// Strings of special characters which yield special modifiers
-#[derive(Debug)]
-pub struct ModifierString {
-    pub open: char,
-    pub close: char,
-    pub open_idx: usize,
-    pub close_idx: usize,
-    pub inbetween: String,
-}
 
 // A small structure that helps build the table in ui.rs
 pub struct TableStructure{
@@ -136,7 +122,6 @@ pub struct TableStructure{
 
     pub hex_width: u16, // width of columns 0 & 2 need to be bound to the hex string size.
 }
-
 impl TableStructure {
     pub fn new() -> Self {
         Self { rows: 16, columns: 4, column_spacing: 1, hex_width: 1, }
@@ -146,8 +131,8 @@ impl TableStructure {
 pub struct TableModel {
     pub hex_list: Vec<String>,
     pub word_list: Vec<String>,
-    pub junk_word_list: Vec<String>,
-    pub play_space: PlaySpace,
+    pub junk_words: (Vec<String>, Vec<usize>),
+    pub play_space: (Vec<char>, Vec<String>),
     pub password: String,
     pub state: TableState,
 }
@@ -157,13 +142,13 @@ impl TableModel {
         let hex_list = Self::build_hex_list();
         let word_list = Self::new_word_list(8);
         let password = Self::new_password(&word_list);
-        let junk_word_list = Self::generate_junk(&word_list);
-        let play_space = Self::build_play_space(&junk_word_list.0);
+        let junk_words = Self::generate_junk(&word_list);
+        let play_space = Self::build_play_space(&junk_words.0);
         Self { 
             hex_list,
             word_list,
             password, 
-            junk_word_list,
+            junk_words,
             play_space,
             state: TableState::new(),
         }
@@ -240,7 +225,6 @@ impl TableModel {
         return (content, empty_indices);
     }
 
-<<<<<<< HEAD
     /* helper function turns output of generate_junk to a string then back into a
     *  vec where each cell is an equal number of characters.
     */
@@ -303,8 +287,6 @@ impl TableModel {
         // take captures and words from content
         content
     }
-=======
->>>>>>> a76a2a6 (playspace object)
 
 
     /* builds a Vec<Vec<String>> that looks likes this
@@ -347,78 +329,6 @@ impl TableModel {
         }
 
         result
-    }
-
-    /* helper function turns output of generate_junk to a string then back into a
-    *  vec where each cell is an equal number of characters.
-    */
-    pub fn build_play_space(junk_word_list: &[String]) -> PlaySpace {
-        let cell_len = 8;
-        let total_cells = 32;
-
-        // Flatten into Vec<char> so we can chunk by *characters* safely
-        let chars: Vec<char> = junk_word_list.iter().flat_map(|s| s.chars()).collect();
-
-        assert_eq!(chars.len(), cell_len * total_cells, "expected 256 chars total");
-
-        // Chunk into 8-char cells
-        let char_cells: Vec<String> = chars
-            .chunks(cell_len)
-            .take(total_cells)
-            .map(|chunk| chunk.iter().collect::<String>())
-            .collect();
-
-        PlaySpace { chars, char_cells }
-    }
-
-    /* returns a list of valid playable strings in the existing play space
-    */
-    pub fn capture_bracket_pairs(input: &str) -> Result<Vec<ModifierString>, String> {
-        let mut stack: Vec<(char, usize)> = Vec::new();
-        let mut pairs: Vec<ModifierString> = Vec::new();
-
-        for (idx, ch) in input.chars().enumerate() {
-            match ch {
-                '(' | '[' | '{' | '<' => {
-                    stack.push((ch, idx));
-                }
-                ')' | ']' | '}' | '>' => {
-                    let (open, open_idx) = stack.pop()
-                        .ok_or_else(|| format!("Unmatched closing '{}' at {}", ch, idx))?;
-
-                    if !is_matching_pair(open, ch) {
-                        return Err(format!(
-                            "Mismatched pair: '{}' at {} does not match '{}' at {}",
-                            open, open_idx, ch, idx
-                        ));
-                    }
-
-                    pairs.push(ModifierString {
-                        open,
-                        close: ch,
-                        open_idx,
-                        close_idx: idx,
-                    });
-                }
-                _ => {}
-            }
-        }
-
-        if let Some((open, idx)) = stack.pop() {
-            return Err(format!("Unmatched opening '{}' at {}", open, idx));
-        }
-
-        Ok(pairs)
-    }
-
-    fn is_matching_pair(open: char, close: char) -> bool {
-        matches!(
-            (open, close),
-            ('(', ')') |
-            ('[', ']') |
-            ('{', '}') |
-            ('<', '>')
-        )
     }
 }
 

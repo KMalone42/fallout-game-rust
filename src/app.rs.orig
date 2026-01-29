@@ -146,8 +146,13 @@ impl TableStructure {
 pub struct TableModel {
     pub hex_list: Vec<String>,
     pub word_list: Vec<String>,
+<<<<<<< HEAD
+    pub junk_words: (Vec<String>, Vec<usize>),
+    pub play_space: (Vec<char>, Vec<String>),
+=======
     pub junk_word_list: Vec<String>,
     pub play_space: PlaySpace,
+>>>>>>> a76a2a6 (playspace object)
     pub password: String,
     pub state: TableState,
 }
@@ -157,13 +162,13 @@ impl TableModel {
         let hex_list = Self::build_hex_list();
         let word_list = Self::new_word_list(8);
         let password = Self::new_password(&word_list);
-        let junk_word_list = Self::generate_junk(&word_list);
-        let play_space = Self::build_play_space(&junk_word_list.0);
+        let junk_words = Self::generate_junk(&word_list);
+        let play_space = Self::build_play_space(&junk_words.0);
         Self { 
             hex_list,
             word_list,
             password, 
-            junk_word_list,
+            junk_words,
             play_space,
             state: TableState::new(),
         }
@@ -421,6 +426,9 @@ impl TableModel {
         )
     }
 }
+
+
+
 
 
 pub struct DebugLog {

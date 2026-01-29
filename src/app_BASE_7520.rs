@@ -112,20 +112,6 @@ impl Header {
     }
 }
 
-pub struct PlaySpace {
-    pub chars: Vec<char>,
-    pub char_cells: Vec<String>,
-}
-
-// Strings of special characters which yield special modifiers
-#[derive(Debug)]
-pub struct ModifierString {
-    pub open: char,
-    pub close: char,
-    pub open_idx: usize,
-    pub close_idx: usize,
-    pub inbetween: String,
-}
 
 // A small structure that helps build the table in ui.rs
 pub struct TableStructure{
@@ -136,7 +122,6 @@ pub struct TableStructure{
 
     pub hex_width: u16, // width of columns 0 & 2 need to be bound to the hex string size.
 }
-
 impl TableStructure {
     pub fn new() -> Self {
         Self { rows: 16, columns: 4, column_spacing: 1, hex_width: 1, }
@@ -147,7 +132,7 @@ pub struct TableModel {
     pub hex_list: Vec<String>,
     pub word_list: Vec<String>,
     pub junk_word_list: Vec<String>,
-    pub play_space: PlaySpace,
+    pub play_space: Vec<String>,
     pub password: String,
     pub state: TableState,
 }
@@ -158,7 +143,7 @@ impl TableModel {
         let word_list = Self::new_word_list(8);
         let password = Self::new_password(&word_list);
         let junk_word_list = Self::generate_junk(&word_list);
-        let play_space = Self::build_play_space(&junk_word_list.0);
+        let play_space = Self::build_play_space(&junk_word_list);
         Self { 
             hex_list,
             word_list,
@@ -203,7 +188,7 @@ impl TableModel {
     /* balls n bins implementation generates junk around each word and returns a 
     *  Vec<String> that looks like (junk, word, junk, word...
     */
-    pub fn generate_junk(word_list: &[String]) -> (Vec<String>, Vec<usize>) {
+    pub fn generate_junk(word_list: &[String]) -> Vec<String> {
         let total_chars: usize = word_list.iter().map(|s| s.chars().count()).sum();
         let total_junk: usize = 256usize.saturating_sub(total_chars);
 
@@ -220,7 +205,7 @@ impl TableModel {
             });
 
         assert!(!empty_indices.is_empty(), "nowhere to put junk (no bins)");
-        if total_junk == 0 { return (content, empty_indices); }
+        if total_junk == 0 { return content; }
 
         let fr_max_1: usize = empty_indices.len();
         let junkpool: Vec<char> =
@@ -237,14 +222,13 @@ impl TableModel {
 
             content[empty_indices[i]].push(junk_char);
         };
-        return (content, empty_indices);
+        return content
     }
 
-<<<<<<< HEAD
     /* helper function turns output of generate_junk to a string then back into a
     *  vec where each cell is an equal number of characters.
     */
-    pub fn build_play_space(junk_word_list: &[String]) -> (Vec<char>, Vec<String>) {
+    pub fn build_play_space(junk_word_list: &[String]) -> Vec<char>, Vec<String> {
         let cell_len = 8;
         let total_cells = 32;
 
@@ -260,52 +244,16 @@ impl TableModel {
             .map(|chunk| chunk.iter().collect::<String>())
             .collect();
 
-        return (chars, chunked_chars);
+        return chars, chunked_chars;
     }
 
-
-    /* returns substring between FIRST open and LAST close (exclusive)
-    *  helper function for eval_play_space 
-    */ 
-    pub fn capture_between(s: &str, open: char, close: char) -> Option<String> {
-        let start = s.find(open)?;     // byte index of first open
-        let end   = s.rfind(close)?;   // byte index of last close
-        if end <= start { return None; }
-
-        // we want *inside* the delimiters
-        let inside = &s[start + open.len_utf8() .. end];
-        Some(inside.to_string())
-    }
     /* returns a list of valid playable strings in the existing play space
-    *  take the output of generate junk and evaluate all the symbol strings
     */
-    pub fn eval_play_space(mut junk_indices: Vec<usize>, content: Vec<String>) -> Vec<String> {
-        // junk_indices from generate_junk.empty_indices is used as a map to tell us where junk was likely 
-        // placed within content before processing these things however we 
-        // need to find out if any of these were left empty
-        junk_indices.retain(|&i| !content[i].is_empty());
+    pub fn eval_play_space() -> Vec<String> {
+        let valid: Vec<String>;
 
-        // captures of text *between* first opener and last closer
-        let mut captures: Vec<String> = Vec::new();
-
-        for &idx in &junk_indices {
-            let junk: &str = content[idx].as_str();
-
-            // () [] {} <> "" ''
-            if let Some(s) = Self::capture_between(junk, '(', ')') { captures.push(s); }
-            if let Some(s) = Self::capture_between(junk, '[', ']') { captures.push(s); }
-            if let Some(s) = Self::capture_between(junk, '{', '}') { captures.push(s); }
-            if let Some(s) = Self::capture_between(junk, '<', '>') { captures.push(s); }
-            if let Some(s) = Self::capture_between(junk, '"', '"') { captures.push(s); }
-            if let Some(s) = Self::capture_between(junk, '\'', '\'') { captures.push(s); }
-        }
-
-        // take captures and words from content
-        content
+        return valid;
     }
-=======
->>>>>>> a76a2a6 (playspace object)
-
 
     /* builds a Vec<Vec<String>> that looks likes this
     *  hex play[0] hex play[2]
@@ -347,78 +295,6 @@ impl TableModel {
         }
 
         result
-    }
-
-    /* helper function turns output of generate_junk to a string then back into a
-    *  vec where each cell is an equal number of characters.
-    */
-    pub fn build_play_space(junk_word_list: &[String]) -> PlaySpace {
-        let cell_len = 8;
-        let total_cells = 32;
-
-        // Flatten into Vec<char> so we can chunk by *characters* safely
-        let chars: Vec<char> = junk_word_list.iter().flat_map(|s| s.chars()).collect();
-
-        assert_eq!(chars.len(), cell_len * total_cells, "expected 256 chars total");
-
-        // Chunk into 8-char cells
-        let char_cells: Vec<String> = chars
-            .chunks(cell_len)
-            .take(total_cells)
-            .map(|chunk| chunk.iter().collect::<String>())
-            .collect();
-
-        PlaySpace { chars, char_cells }
-    }
-
-    /* returns a list of valid playable strings in the existing play space
-    */
-    pub fn capture_bracket_pairs(input: &str) -> Result<Vec<ModifierString>, String> {
-        let mut stack: Vec<(char, usize)> = Vec::new();
-        let mut pairs: Vec<ModifierString> = Vec::new();
-
-        for (idx, ch) in input.chars().enumerate() {
-            match ch {
-                '(' | '[' | '{' | '<' => {
-                    stack.push((ch, idx));
-                }
-                ')' | ']' | '}' | '>' => {
-                    let (open, open_idx) = stack.pop()
-                        .ok_or_else(|| format!("Unmatched closing '{}' at {}", ch, idx))?;
-
-                    if !is_matching_pair(open, ch) {
-                        return Err(format!(
-                            "Mismatched pair: '{}' at {} does not match '{}' at {}",
-                            open, open_idx, ch, idx
-                        ));
-                    }
-
-                    pairs.push(ModifierString {
-                        open,
-                        close: ch,
-                        open_idx,
-                        close_idx: idx,
-                    });
-                }
-                _ => {}
-            }
-        }
-
-        if let Some((open, idx)) = stack.pop() {
-            return Err(format!("Unmatched opening '{}' at {}", open, idx));
-        }
-
-        Ok(pairs)
-    }
-
-    fn is_matching_pair(open: char, close: char) -> bool {
-        matches!(
-            (open, close),
-            ('(', ')') |
-            ('[', ']') |
-            ('{', '}') |
-            ('<', '>')
-        )
     }
 }
 
@@ -469,7 +345,7 @@ impl App {
     pub fn new() -> Self {
         let main = TableModel::new();
         let ts = TableStructure::new();
-        let table_contents = TableModel::build_alternating_lists(ts.columns, ts.rows, &main.hex_list, &main.play_space.1);
+        let table_contents = TableModel::build_alternating_lists(ts.columns, ts.rows, &main.hex_list, &main.play_space);
         let state = TableState::default().with_selected(Some(0));
         let header = Header::new(4);
         Self {
