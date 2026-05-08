@@ -344,7 +344,7 @@ impl App {
 
             main,
             state,
-            col_state: 0, // Starting column selected
+            col_state: 1, // Starting column selected
             ts,
             table_contents,
 
@@ -386,15 +386,15 @@ impl App {
         if self.focus != Focus::Main { return; }
         let max_cols = self.ts.columns.saturating_sub(1);
 
-        if self.col_state > 0 { self.col_state -= 1; }
+        if self.col_state > 1 { self.col_state -= 2; }
         else { self.col_state = max_cols; } // wrapping_sub(n)
     }
     pub fn table_right(&mut self) {
         if self.focus != Focus::Main { return; }
         let max_cols = self.ts.columns.saturating_sub(1);
 
-        if self.col_state < max_cols { self.col_state += 1; }
-        else { self.col_state = 0; } // wrapping_add(n)
+        if self.col_state < max_cols { self.col_state += 2; }
+        else { self.col_state = 1; } // wrapping_add(n)
     }
 
     pub fn word_at_coordinates(&mut self, x: usize, y: Option<usize>) -> Option<String> {

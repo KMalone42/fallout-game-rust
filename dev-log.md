@@ -171,3 +171,17 @@ Time Log
 ---
 
 2025-11-26 : "~8.16hrs"
+
+
+# Chapter 5. "We're back"
+
+
+2026-05-07
+-------------------------------------------------------------------------------
+
+i'm back because i'm sitting here in Autumn's studio.
+We're having a night while autumn does the plants on her little model.
+
+I'm going to try and alter the navigation
+
+I want to make it so that the user can only go to col 1, col 3
