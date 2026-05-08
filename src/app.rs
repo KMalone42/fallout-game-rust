@@ -240,7 +240,6 @@ impl TableModel {
         return (content, empty_indices);
     }
 
-<<<<<<< HEAD
     /* helper function turns output of generate_junk to a string then back into a
     *  vec where each cell is an equal number of characters.
     */
@@ -303,9 +302,6 @@ impl TableModel {
         // take captures and words from content
         content
     }
-=======
->>>>>>> a76a2a6 (playspace object)
-
 
     /* builds a Vec<Vec<String>> that looks likes this
     *  hex play[0] hex play[2]
